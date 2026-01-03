@@ -1,4 +1,8 @@
+# Package root: src/
+
 import logging
+from dataclasses import dataclass, field
+from datetime import datetime
 from typing import List, Optional
 
 from specification.authorization_spec import AuthorizationSpec
@@ -11,20 +15,19 @@ from verification.scope_boundedness_checker import ScopeBoundednessChecker
 logger = logging.getLogger(__name__)
 
 
-class VerificationResult:
-    def __init__(
-        self,
-        passed: bool,
-        results: List[CheckResult],
-        failure_reason: Optional[str],
-    ):
-        self.passed = passed
-        self.results = results
-        self.failure_reason = failure_reason
+@dataclass(frozen=True)
+class VerificationReport:
+    """Auditable verification report from static verification."""
+
+    passed: bool
+    checker_results: List[CheckResult] = field(default_factory=list)
+    failure_reason: Optional[str] = None
+    timestamp: datetime = field(default_factory=datetime.now)
 
     def __repr__(self) -> str:
         status = "PASSED" if self.passed else "FAILED"
-        return f"VerificationResult(status={status}, checks={len(self.results)})"
+        return f"VerificationReport(status={status}, checks={len(self.checker_results)}, timestamp={self.timestamp.isoformat()})"
+
 
 
 class VerificationOrchestrator:
@@ -41,7 +44,7 @@ class VerificationOrchestrator:
             ScopeBoundednessChecker(),
         ]
 
-    def verify(self, spec: AuthorizationSpec) -> VerificationResult:
+    def verify(self, spec: AuthorizationSpec) -> VerificationReport:
         results: List[CheckResult] = []
         violations: List[str] = []
         logger.info(f"Starting static verification for spec: {spec.spec_id}")
@@ -73,4 +76,9 @@ class VerificationOrchestrator:
             )
             logger.warning(f"  Reason: {reason}")
 
-        return VerificationResult(passed=passed, results=results, failure_reason=reason)
+        return VerificationReport(
+            passed=passed, 
+            checker_results=results, 
+            failure_reason=reason
+        )
+

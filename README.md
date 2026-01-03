@@ -24,6 +24,34 @@ The system is divided into three clearly separated layers:
 Early research prototype. Not intended for production use. This code is built
 for clarity, auditability, and as a foundation for experiments and extensions.
 
+## Threat Model
+
+What we prevent:
+- AI systems accessing undeclared data sources (static + runtime verified)
+- AI systems performing undeclared actions (static verified)
+- Execution beyond declared iteration limits (runtime enforced)
+- Data accumulation beyond declared size limits (runtime enforced)
+- Task execution beyond declared timeout (runtime enforced)
+
+## Trust Boundary
+
+**Trusted code:**
+- The authorization specification (AuthorizationSpec object)
+- The static verification engine (ensures all specs are well-formed)
+- The runtime monitoring layer (MonitoredContext enforces boundaries)
+
+**Untrusted code:**
+- All AI task functions (the code being executed under authorization)
+- Task implementations have no direct access to resources outside MonitoredContext
+
+## Limitations
+
+- No cryptographic verification of specifications (honor system on declaration)
+- Data size tracking is per-operation (not cumulative transaction cost)
+- Timeout enforced via wall-clock monotonic time (not CPU time)
+- No sandboxing of untrusted code (relies on Python semantics + MonitoredContext)
+- Task must explicitly call ctx.tick() and ctx.read_input() (not transparent interception)
+
 ## Quickstart
 Run the demo from the project root:
 

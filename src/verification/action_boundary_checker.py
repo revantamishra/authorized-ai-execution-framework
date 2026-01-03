@@ -1,3 +1,5 @@
+# Package root: src/
+
 from typing import List
 
 from specification.authorization_spec import AuthorizationSpec

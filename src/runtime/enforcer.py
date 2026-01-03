@@ -1,3 +1,5 @@
+# Package root: src/
+
 import logging
 from typing import Any, Callable, Dict
 
@@ -52,12 +54,21 @@ class RuntimeEnforcer:
 
         # Phase 1: Static Verification
         logger.debug("Enforcer: Phase 1 - Static Verification")
+        print(f"[Enforcer] Static verification starting for spec: {spec.spec_id}")
         verification = self.verifier.verify(spec)
+        # Print checker-wise results to console
+        try:
+            for r in getattr(verification, 'results', getattr(verification, 'checker_results', [])):
+                status = 'PASS' if r.passed else 'FAIL'
+                print(f"[Verification] {r.checker_name} -> {status}")
+        except Exception:
+            pass
 
         if not verification.passed:
             logger.error(
                 f"Enforcer: Static verification failed: {verification.failure_reason}"
             )
+            print(f"[Enforcer] [FAIL] Static verification FAILED")
             return {
                 "success": False,
                 "error": "Static verification failed",
@@ -65,19 +76,25 @@ class RuntimeEnforcer:
             }
 
         logger.info("Enforcer: Static verification passed - proceeding to runtime")
+        print(f"[Enforcer] [PASS] Static verification PASSED - proceeding to runtime")
+
 
         # Phase 2: Runtime Enforcement
         logger.debug("Enforcer: Phase 2 - Runtime Enforcement")
+        print(f"[Enforcer] Runtime enforcement starting...")
         ctx = MonitoredContext(spec)
 
         try:
             logger.debug(f"Enforcer: Executing task with monitored context")
+            print(f"[Enforcer] Executing task...")
             result = task(ctx)
             logger.info(f"Enforcer: Task completed successfully")
+            print(f"[Enforcer] [PASS] Task completed successfully")
             return {"success": True, "result": result}
 
         except RuntimeViolation as e:
             logger.error(f"Enforcer: Runtime violation detected: {str(e)}")
+            print(f"[Enforcer] [FAIL] Runtime violation detected: {str(e)}")
             return {
                 "success": False,
                 "error": "Runtime violation",
@@ -86,6 +103,7 @@ class RuntimeEnforcer:
 
         except Exception as e:
             logger.error(f"Enforcer: Unexpected error during execution: {str(e)}")
+            print(f"[Enforcer] [FAIL] Unexpected error: {str(e)}")
             return {
                 "success": False,
                 "error": "Unexpected error",

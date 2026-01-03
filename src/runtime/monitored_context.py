@@ -1,9 +1,13 @@
+# Package root: src/
+
 import logging
+import time
 from typing import Any
 
 from specification.authorization_spec import AuthorizationSpec
 
 logger = logging.getLogger(__name__)
+
 
 
 class RuntimeViolation(Exception):
@@ -33,6 +37,8 @@ class MonitoredContext:
         """
         self.spec = spec
         self.iterations = 0
+        self.current_data_size = 0  # Track total data accessed
+        self.start_time = time.monotonic()  # Wall-clock timeout enforcement
         logger.debug(f"MonitoredContext initialized for spec {spec.spec_id}")
 
     def read_input(self, source_type: str, source_id: str) -> Any:
@@ -48,12 +54,36 @@ class MonitoredContext:
 
         Raises:
             RuntimeViolation: If the source is not in allowed_inputs
+            RuntimeViolation: If max_data_size exceeded
         """
+        # Check timeout
+        elapsed = time.monotonic() - self.start_time
+        if elapsed > self.spec.execution_scope.timeout_seconds:
+            logger.error(f"✗ Timeout exceeded: {elapsed:.2f}s > {self.spec.execution_scope.timeout_seconds}s")
+            raise RuntimeViolation(
+                f"Timeout exceeded: {elapsed:.2f}s > {self.spec.execution_scope.timeout_seconds}s"
+            )
+
         # Check if the requested input is in allowed_inputs
         for allowed in self.spec.allowed_inputs:
             if allowed.source_type == source_type and allowed.source_id == source_id:
-                logger.debug(f"✓ Authorized read: {source_type}:{source_id}")
-                return f"[DATA from {source_id}]"
+                # Simulate data access and track size
+                data_chunk = f"[DATA from {source_id}]"
+                chunk_size = len(data_chunk.encode('utf-8'))
+                
+                # Check if adding this chunk would exceed max_data_size
+                if self.current_data_size + chunk_size > self.spec.execution_scope.max_data_size:
+                    logger.error(
+                        f"✗ Data size limit exceeded: {self.current_data_size + chunk_size} > {self.spec.execution_scope.max_data_size}"
+                    )
+                    raise RuntimeViolation(
+                        f"Data size limit exceeded: {self.current_data_size + chunk_size} bytes > "
+                        f"{self.spec.execution_scope.max_data_size} limit"
+                    )
+                
+                self.current_data_size += chunk_size
+                logger.debug(f"✓ Authorized read: {source_type}:{source_id} (total size: {self.current_data_size} bytes)")
+                return data_chunk
 
         # Source not authorized
         logger.error(f"✗ Unauthorized read attempt: {source_type}:{source_id}")
@@ -89,14 +119,24 @@ class MonitoredContext:
     def tick(self) -> None:
         """
         Increment iteration counter and check if max_iterations exceeded.
+        Also check if timeout has been exceeded.
 
         Call this once per main loop iteration.
 
         Raises:
             RuntimeViolation: If iterations exceed max_iterations
+            RuntimeViolation: If timeout exceeded
         """
         self.iterations += 1
         max_iter = self.spec.execution_scope.max_iterations
+
+        # Check timeout
+        elapsed = time.monotonic() - self.start_time
+        if elapsed > self.spec.execution_scope.timeout_seconds:
+            logger.error(f"✗ Timeout exceeded: {elapsed:.2f}s > {self.spec.execution_scope.timeout_seconds}s")
+            raise RuntimeViolation(
+                f"Timeout exceeded: {elapsed:.2f}s > {self.spec.execution_scope.timeout_seconds}s"
+            )
 
         if self.iterations > max_iter:
             logger.error(f"✗ Iteration limit exceeded: {self.iterations} > {max_iter}")
@@ -105,4 +145,4 @@ class MonitoredContext:
                 f"{self.iterations} iterations > {max_iter} limit"
             )
 
-        logger.debug(f"Iteration {self.iterations}/{max_iter}")
+        logger.debug(f"Iteration {self.iterations}/{max_iter}, elapsed: {elapsed:.2f}s")
