@@ -1,14 +1,9 @@
 from .monitored_context import MonitoredContext, RuntimeViolation
-from ..verification.verification_orchestrator import VerificationOrchestrator
+from verification.verification_orchestrator import VerificationOrchestrator
 from ..specification.authorization_spec import AuthorizationSpec
 
 
-
 class RuntimeEnforcer:
-    """
-    Executes AI tasks strictly within verified authorization boundaries.
-    """
-
     def __init__(self):
         self.verifier = VerificationOrchestrator()
 
@@ -26,12 +21,6 @@ class RuntimeEnforcer:
 
         try:
             result = task(ctx)
-            return {
-                "success": True,
-                "result": result,
-            }
+            return {"success": True, "result": result}
         except RuntimeViolation as e:
-            return {
-                "success": False,
-                "runtime_violation": str(e),
-            }
+            return {"success": False, "runtime_violation": str(e)}
