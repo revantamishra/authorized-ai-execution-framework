@@ -1,26 +1,35 @@
 # Authorized AI Execution Framework
 
 ## Overview
-A research-grade proof-of-concept for enforcing pre-execution authorization and runtime execution boundaries for AI systems.
+This repository contains a research-grade proof-of-concept for enforcing
+pre-execution authorization and runtime execution boundaries for AI systems.
 
-This framework ensures that AI systems:
-- Cannot access undeclared data
-- Cannot perform undeclared actions
-- Cannot execute outside explicitly verified boundaries
+Core guarantees:
+- AI systems cannot access undeclared data
+- AI systems cannot perform undeclared actions
+- AI systems cannot execute outside explicitly verified boundaries
 
 ## Core Principle
-No implicit behavior.  
-All AI capabilities must be explicitly declared, verified, and enforced.
+**No implicit behavior.** All AI capabilities must be explicitly declared,
+statically verified, and enforced at runtime.
 
 ## Architecture
-The system is composed of three strictly separated layers:
-1. Specification Layer
-2. Static Verification Engine
-3. Constrained Runtime Enforcer
+The system is divided into three clearly separated layers:
+
+1. Specification Layer — declarative `AuthorizationSpec` objects
+2. Static Verification Engine — deterministic checks that accept/reject specs
+3. Constrained Runtime Enforcer — monitored execution enforcing the spec
 
 ## Status
-Early research prototype.  
-Not intended for production use.
+Early research prototype. Not intended for production use. This code is built
+for clarity, auditability, and as a foundation for experiments and extensions.
+
+## Quickstart
+Run the demo from the project root:
+
+```bash
+PYTHONPATH=src python3 -m demo.run_demo
+```
 
 ## License
 To be determined.

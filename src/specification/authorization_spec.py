@@ -1,16 +1,9 @@
 from __future__ import annotations
+
 from dataclasses import dataclass
-from typing import List, Dict, Any, Optional
+from typing import Any, Dict, List, Optional
 
-from sympy import public
-
-
-@dataclass(frozen=True)
-class InputDeclaration:
-    source_type: str
-    source_id: str
-    data_schema: Dict[str, Any]
-    access_mode: str
+from specification.models import AllowedInput, ExecutionScope, PermittedAction
 
 
 @dataclass(frozen=True)
@@ -21,30 +14,13 @@ class ForbiddenPattern:
 
 
 @dataclass(frozen=True)
-class ActionDeclaration:
-    action_type: str
-    target_type: str
-    parameters_schema: Dict[str, Any]
-    preconditions: List[str]
-
-
-@dataclass(frozen=True)
-class ScopeDeclaration:
-    max_iterations: int
-    max_data_size: int
-    timeout_seconds: int
-    allowed_resources: List[str]
-
-
-@dataclass(frozen=True)
- 
 class AuthorizationSpec:
     spec_id: str
     version: str
 
-    allowed_inputs: List[InputDeclaration]
+    allowed_inputs: List[AllowedInput]
     forbidden_inputs: List[ForbiddenPattern]
-    permitted_actions: List[ActionDeclaration]
-    execution_scope: ScopeDeclaration
+    permitted_actions: List[PermittedAction]
+    execution_scope: ExecutionScope
 
     metadata: Optional[Dict[str, Any]] = None
