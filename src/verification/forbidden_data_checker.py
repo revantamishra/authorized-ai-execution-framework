@@ -18,6 +18,8 @@ class ForbiddenDataChecker:
         """
         Check for overlaps between forbidden and allowed inputs.
 
+        Also warns about potential wildcard pattern issues.
+
         Args:
             spec: The authorization specification to validate
 
@@ -39,5 +41,17 @@ class ForbiddenDataChecker:
                                 f"overlaps with allowed input '{allowed.source_id}': {forbidden.reason}"
                             )
                         )
+
+                    # Check for wildcard patterns that might overlap
+                    if "*" in forbidden.pattern_value:
+                        # Convert wildcard pattern to simple prefix matching
+                        pattern_prefix = forbidden.pattern_value.rstrip("*")
+                        if allowed.source_id.startswith(pattern_prefix):
+                            violations.append(
+                                (
+                                    f"Forbidden pattern '{forbidden.pattern_value}' "
+                                    f"may match allowed input '{allowed.source_id}': {forbidden.reason}"
+                                )
+                            )
 
         return CheckResult("ForbiddenDataChecker", len(violations) == 0, violations)

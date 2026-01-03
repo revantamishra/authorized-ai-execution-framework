@@ -8,6 +8,7 @@ static verification and runtime enforcement.
 
 from __future__ import annotations
 
+import json
 import logging
 from typing import Any, Dict
 
@@ -15,6 +16,7 @@ from runtime.enforcer import RuntimeEnforcer
 from runtime.mock_ai import MockAISystem
 from specification.authorization_spec import AuthorizationSpec
 from specification.models import AllowedInput, ExecutionScope, PermittedAction
+from verification.spec_explainer import SpecExplainer
 
 logging.basicConfig(
     level=logging.INFO,
@@ -29,22 +31,39 @@ def _print_section(title: str) -> None:
     print("=" * 70 + "\n")
 
 
-def _print_verification_report(report: Any) -> None:
-    """Pretty-print a VerificationReport with checker details."""
-    print(f"\n[Verification Report]")
-    status = "[PASS]" if report.passed else "[FAIL]"
-    print(f"  Status: {status}")
-    print(f"  Timestamp: {getattr(report, 'timestamp', 'N/A')}")
-    print(f"  Checker Results:")
-    try:
-        for checker_result in getattr(report, 'checker_results', []):
-            check_status = "[PASS]" if checker_result.passed else "[FAIL]"
-            print(f"    {check_status} {checker_result.checker_name}")
-            if checker_result.violations:
-                for v in checker_result.violations:
-                    print(f"         {v}")
-    except Exception:
-        pass
+def _print_risk_assessment(report: Any) -> None:
+    """Pretty-print risk assessment from VerificationReport."""
+    if not hasattr(report, 'risk_assessment') or not report.risk_assessment:
+        return
+    
+    ra = report.risk_assessment
+    print(f"\n[RISK ASSESSMENT]")
+    print(f"  Severity: {ra.severity}")
+    print(f"  Overall Risk Score: {ra.overall_risk:.2f} / 1.00")
+    if ra.risk_factors:
+        print(f"  Risk Factors:")
+        for factor in ra.risk_factors:
+            print(f"    - {factor}")
+    if ra.recommendations:
+        print(f"  Recommendations:")
+        for rec in ra.recommendations:
+            print(f"    - {rec}")
+
+
+def _print_audit_trail(report: Any) -> None:
+    """Print audit hash for compliance."""
+    if hasattr(report, 'audit_hash') and report.audit_hash:
+        print(f"\n[AUDIT TRAIL]")
+        print(f"  Hash: {report.audit_hash[:16]}... (SHA256)")
+        print(f"  Full: {report.audit_hash}")
+
+
+def _export_audit_json(report: Any, filename: str) -> None:
+    """Export audit report to JSON file."""
+    if hasattr(report, 'to_audit_json'):
+        with open(filename, 'w') as f:
+            f.write(report.to_audit_json())
+        print(f"\n[AUDIT EXPORT] Saved to {filename}")
 
 
 def _print_result(label: str, result: Dict[str, Any]) -> None:
@@ -87,6 +106,11 @@ def main() -> None:
         ),
     )
 
+    # Show human-readable explanation
+    _print_section("SPECIFICATION EXPLANATION")
+    explainer = SpecExplainer()
+    print(explainer.explain(spec))
+
     enforcer = RuntimeEnforcer()
 
     _print_section("TEST 1: COMPLIANT TASK (Should Pass)")
@@ -109,6 +133,15 @@ def main() -> None:
     print("across multiple read operations until it exceeds the declared limit.\n")
     result_adv_data = enforcer.execute(spec, MockAISystem.adversarial_data_size_task)
     _print_result("Adversarial Data Size Task", result_adv_data)
+
+    # Show risk assessment and audit trail from a fresh verification
+    _print_section("SECURITY ASSESSMENT & COMPLIANCE")
+    from verification.verification_orchestrator import VerificationOrchestrator
+    orchestrator = VerificationOrchestrator()
+    report = orchestrator.verify(spec)
+    _print_risk_assessment(report)
+    _print_audit_trail(report)
+    _export_audit_json(report, "audit_report.json")
 
 
 if __name__ == "__main__":
