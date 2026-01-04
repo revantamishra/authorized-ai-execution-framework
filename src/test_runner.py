@@ -24,7 +24,7 @@ def test_completeness_checker_valid_spec():
     result = checker.check(spec)
     assert result.passed is True
     assert len(result.violations) == 0
-    print("✓ test_completeness_checker_valid_spec")
+    print("[PASS] test_completeness_checker_valid_spec")
 
 
 def test_risk_scorer_safe_spec():
@@ -45,7 +45,7 @@ def test_risk_scorer_safe_spec():
     assessment = scorer.score_spec(spec)
     assert assessment.overall_risk < 0.3
     assert assessment.severity == "LOW"
-    print("✓ test_risk_scorer_safe_spec")
+    print("[PASS] test_risk_scorer_safe_spec")
 
 
 def test_spec_explainer_generates_output():
@@ -68,7 +68,7 @@ def test_spec_explainer_generates_output():
     assert "users_table" in text
     assert "read" in text.lower()
     assert "100" in text  # iterations
-    print("✓ test_spec_explainer_generates_output")
+    print("[PASS] test_spec_explainer_generates_output")
 
 
 def test_verification_report_audit_hash():
@@ -89,7 +89,7 @@ def test_verification_report_audit_hash():
     report = orchestrator.verify(spec)
     assert len(report.audit_hash) == 64  # SHA256 hex is 64 chars
     assert report.audit_hash.isalnum()
-    print("✓ test_verification_report_audit_hash")
+    print("[PASS] test_verification_report_audit_hash")
 
 
 def test_verification_report_risk_assessment():
@@ -111,7 +111,7 @@ def test_verification_report_risk_assessment():
     assert report.risk_assessment is not None
     assert report.risk_assessment.severity in ["LOW", "MEDIUM", "HIGH", "CRITICAL"]
     assert 0.0 <= report.risk_assessment.overall_risk <= 1.0
-    print("✓ test_verification_report_risk_assessment")
+    print("[PASS] test_verification_report_risk_assessment")
 
 
 def test_audit_json_export():
@@ -135,7 +135,7 @@ def test_audit_json_export():
     assert "audit_hash" in json_export
     assert "risk_assessment" in json_export
     assert "checker_results" in json_export
-    print("✓ test_audit_json_export")
+    print("[PASS] test_audit_json_export")
 
 
 def test_monitored_context_iteration_limit():
@@ -159,7 +159,7 @@ def test_monitored_context_iteration_limit():
         ctx.tick()  # Third tick should fail
         assert False, "Expected RuntimeViolation"
     except RuntimeViolation:
-        print("✓ test_monitored_context_iteration_limit")
+        print("[PASS] test_monitored_context_iteration_limit")
 
 
 def test_forbidden_data_wildcard_overlap():
@@ -180,7 +180,7 @@ def test_forbidden_data_wildcard_overlap():
     result = checker.check(spec)
     assert result.passed is False
     assert any("pattern" in v.lower() and "match" in v.lower() for v in result.violations)
-    print("✓ test_forbidden_data_wildcard_overlap")
+    print("[PASS] test_forbidden_data_wildcard_overlap")
 
 
 if __name__ == "__main__":
@@ -208,7 +208,7 @@ if __name__ == "__main__":
             passed += 1
         except Exception as e:
             failed += 1
-            print(f"✗ {test.__name__}: {e}")
+            print(f"[FAIL] {test.__name__}: {e}")
             traceback.print_exc()
 
     print("\n" + "=" * 70)
